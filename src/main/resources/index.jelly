@@ -1,0 +1,6 @@
+<!--
+  This view is used to render the installed plugins page.
+-->
+<div>
+  Slave restarter plugin. This plugin will monitor the restart flag in Windows and restarts the slaves when needed.
+</div>

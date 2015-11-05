@@ -1,0 +1,92 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  <l:layout title="Slave Monitor" permission="${app.ADMINISTER}" norefresh="true">
+     <st:include it="${app}" page="sidepanel.jelly"/>
+     <l:header>
+         <script>
+            var monitorLink = <st:bind value="${it}"/>;
+         	function toggleList(listId){
+         		console.log(listId);
+         		
+         		var section = document.getElementById("LIST"+listId);
+         		console.log(section);
+         		if(section == null){
+         			return;
+         		}
+         		
+         		if(section.style.display == ""){
+         			console.log("HIDE");
+         			section.style.display = "none";
+         			var section = document.getElementById("ICON"+listId).src="${rootURL}/plugin/SlaveRestartMonitor/expand.png";
+         		}else{
+         			console.log("SHOW");
+    	     		section.style.display = "";
+    	     		var section = document.getElementById("ICON"+listId).src="${rootURL}/plugin/SlaveRestartMonitor/collapse.png";
+         		}
+         	}
+         	
+         	function setMousePointer(obj) {
+        		obj.style.cursor = 'hand';
+    		}
+    		
+    		function killWatchers(){
+                monitorLink.kill(function(t) {
+                    document.getElementById("monitorStatus").innerHTML = t.responseObject();
+                });
+    		}
+    		
+    		function updateSlaveList(){
+                monitorLink.rebuild(function(t) {
+                    document.getElementById("monitorStatus").innerHTML = t.responseObject();
+                });
+    		}
+    		
+    		function putOnHold(){
+                monitorLink.putOnHold(function(t) {
+                    document.getElementById("monitorStatus").innerHTML = t.responseObject();
+                });
+    		}
+    		
+            function resume(){
+                monitorLink.resume(function(t) {
+                    document.getElementById("monitorStatus").innerHTML = t.responseObject();
+                });
+            }
+            
+            function checkNow(){
+                monitorLink.checkNow(function(t) {
+                    document.getElementById("monitorStatus").innerHTML = t.responseObject();
+                });
+            }
+            function restartSlave(id){
+                monitorLink.restartSlave(id, function(t) {
+                    document.getElementById("monitorStatus").innerHTML = t.responseObject();
+                });
+            }
+    		
+         </script>
+     </l:header>
+     <l:main-panel>
+     	<h1>Slave Restart Monitor</h1>
+     	<p>
+     	<button id="btnPromote" onclick="killWatchers()">Kill Watcher Threads</button>
+     	<button id="btnPromote" onclick="updateSlaveList()">Update Slave List</button>
+     	<button id="btnPromote" onclick="putOnHold()">Put Watchers on Hold</button>
+     	<button id="btnPromote" onclick="resume()">Resume Watchers</button>
+     	<button id="btnPromote" onclick="checkNow()">Check now</button>
+     	  <div id="monitorStatus">${it.getStatus()}</div>
+     	</p>
+     	<j:forEach var="slave" items="${it.getSlaves()}">
+     		<p>
+     			<h3 onmouseover="setMousePointer(this)">
+     			<button id="btn${slave.getID()}" onclick="restartSlave(${slave.getID()})">RESTART</button> <j:if test="${!slave.getRestarts().isEmpty()}"><img id="ICON${slave.getID()}" src="${rootURL}/plugin/SlaveRestartMonitor/expand.png" onclick="toggleList(${slave.getID()})"/></j:if> 
+     			${slave.formatedHeader()}</h3>
+     			<ul id="LIST${slave.getID()}" style="display:none">
+	     			<j:forEach var="restart" items="${slave.getRestarts()}">
+	     				<li>RESTARTED: ${restart}</li>
+	     			</j:forEach>
+     			</ul>
+     		</p>
+ 		</j:forEach>
+     </l:main-panel>
+  </l:layout>  
+</j:jelly>
