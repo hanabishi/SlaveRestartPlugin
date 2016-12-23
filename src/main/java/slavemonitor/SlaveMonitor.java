@@ -18,9 +18,8 @@ public class SlaveMonitor extends Thread {
         if (instance == null) {
             instance = new SlaveMonitor();
             instance.start();
-            instance.reBuildSlaveList();
-            instance.checkNow();
-
+            //instance.reBuildSlaveList();
+            //instance.checkNow();
         }
         return instance;
     }
@@ -28,12 +27,13 @@ public class SlaveMonitor extends Thread {
     @Override
     public void run() {
         while (isAlive) {
+            if (isAlive) {
+                reBuildSlaveList();
+            }
+
             try {
                 wait(60000 * 5);
             } catch (Throwable t) {
-            }
-            if (isAlive) {
-                reBuildSlaveList();
             }
         }
     }
@@ -48,14 +48,14 @@ public class SlaveMonitor extends Thread {
             if (!getSlaves().containsKey(computer.getDisplayName()) && !computer.isUnix()
                     && !computer.getDisplayName().equalsIgnoreCase("master")) {
                 slave = new SlaveWatcher(computer, computer.getNode());
-                if (!slave.isUnix()) {
+                if (!computer.isUnix()) {
                     slave.start();
                     getSlaves().put(computer.getDisplayName(), slave);
                 }
             }
         }
         for (Entry<String, SlaveWatcher> slaveEntry : slaves.entrySet()) {
-            if (!computers.contains(slaveEntry.getKey()) || slaveEntry.getValue().isUnix()) {
+            if (!computers.contains(slaveEntry.getKey())) {
                 slaveEntry.getValue().kill();
                 slaves.remove(slaveEntry.getKey());
             }

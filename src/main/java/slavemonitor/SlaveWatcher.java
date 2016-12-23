@@ -31,8 +31,6 @@ public class SlaveWatcher extends Thread {
     private Computer computer;
     public Node node;
 
-    private boolean isUnix = false;
-
     public int getID() {
         return computer.getName().hashCode();
     }
@@ -53,7 +51,6 @@ public class SlaveWatcher extends Thread {
     public SlaveWatcher(Computer computer, Node node) {
         this.computer = computer;
         this.node = node;
-        // this.launcher = launcher;
     }
 
     public String getFormatedDate() {
@@ -92,9 +89,8 @@ public class SlaveWatcher extends Thread {
     }
 
     public String formatedHeader() {
-        return computer.getDisplayName() + ((isUnix()) ? " <span style='color:red'>[UNSUPPORTED OS]</span> " : "")
-                + ((isOnline()) ? "" : " <span style='color:red'>[OFFLINE]</span> ") + " - <i>" + getStatusText()
-                + "</i>";
+        return computer.getDisplayName() + ((isOnline()) ? "" : " <span style='color:red'>[OFFLINE]</span> ")
+                + " - <i>" + getStatusText() + "</i>";
     }
 
     public void notifyRestarted() {
@@ -128,11 +124,9 @@ public class SlaveWatcher extends Thread {
 
     private synchronized void doCheckForRestart() throws IOException, InterruptedException {
         Launcher launcher = getLauncher();
-        if (launcher == null || launcher.isUnix()) {
-            setUnix(true);
+        if (launcher == null) {
             return;
         }
-        setUnix(false);
         status = SlaveWatcher.CHECKING_RESTART_STATUS;
         int code = CommandRunner.runCommandWithCode(SlaveWatcher.REBOOT_KEY, launcher);
         code += CommandRunner.runCommandWithCode(SlaveWatcher.SESSION_KEY, launcher);
@@ -220,14 +214,6 @@ public class SlaveWatcher extends Thread {
                 }
             }
         }
-    }
-
-    public boolean isUnix() {
-        return isUnix;
-    }
-
-    public void setUnix(boolean isUnix) {
-        this.isUnix = isUnix;
     }
 
     public LinkedList<String> getRestarts() {
