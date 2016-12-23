@@ -7,7 +7,6 @@ import hudson.model.Executor;
 import hudson.model.Node;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
 
@@ -45,12 +44,12 @@ public class SlaveWatcher extends Thread {
 
     private boolean keepRunning = true;
     private boolean restartSlave = false;
-    private boolean onHold = false;
     private boolean forceCheck = false;
 
-    public SlaveWatcher(Computer computer, Node node) {
+    public SlaveWatcher(Computer computer, Node node) throws IOException, InterruptedException {
         this.computer = computer;
         this.node = node;
+        doCheckForRestart();
     }
 
     public String getFormatedDate() {
@@ -110,6 +109,10 @@ public class SlaveWatcher extends Thread {
     public synchronized void kill() {
         this.setKeepRunning(false);
         this.setRestartSlave(false);
+        for (SlaveReservationTask worker : reservationWorkers) {
+            worker.killProcess();
+        }
+        reservationWorkers.clear();
         this.notifyAll();
     }
 
@@ -208,7 +211,7 @@ public class SlaveWatcher extends Thread {
                 try {
                     do {
                         this.wait(60000);
-                    } while (!isOnline() || this.onHold);
+                    } while (!isOnline() && keepRunning);
                 } catch (InterruptedException e) {
                     LogHandler.printStackTrace(e);
                 }
@@ -224,20 +227,13 @@ public class SlaveWatcher extends Thread {
         this.restarts = restarts;
     }
 
-    public boolean isOnHold() {
-        return onHold;
-    }
-
-    public void setOnHold(boolean onHold) {
-        this.onHold = onHold;
-    }
-
     public boolean isRestartSlave() {
         return restartSlave;
     }
 
-    public void setRestartSlave(boolean restartSlave) {
+    public synchronized void setRestartSlave(boolean restartSlave) {
         this.restartSlave = restartSlave;
+        this.notifyAll();
     }
 
     public boolean isKeepRunning() {

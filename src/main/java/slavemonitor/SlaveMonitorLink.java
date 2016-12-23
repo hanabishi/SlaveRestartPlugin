@@ -59,14 +59,6 @@ public class SlaveMonitorLink extends ManagementLink {
     }
 
     @JavaScriptMethod
-    public String putOnHold() {
-        if (slaveMonitor != null) {
-            slaveMonitor.putOnHold();
-        }
-        return getStatus();
-    }
-
-    @JavaScriptMethod
     public String checkNow() {
         if (slaveMonitor != null) {
             slaveMonitor.checkNow();
@@ -74,24 +66,13 @@ public class SlaveMonitorLink extends ManagementLink {
         return getStatus();
     }
 
-    @JavaScriptMethod
-    public String resume() {
-        if (slaveMonitor != null) {
-            slaveMonitor.resumeWatchers();
-        }
-        return getStatus();
-    }
-
     public String getStatus() {
-        int onHold = 0;
         int needsRestart = 0;
         for (Entry<String, SlaveWatcher> config : slaveMonitor.getSlaves().entrySet()) {
-            onHold += (config.getValue().isOnHold() ? 1 : 0);
             needsRestart += (config.getValue().isRestartSlave() ? 1 : 0);
         }
 
-        return "There are " + slaveMonitor.getSlaves().size() + " slaves and " + onHold + " are on hold and "
-                + needsRestart + " needs to restart";
+        return "There are " + slaveMonitor.getSlaves().size() + " slaves and " + needsRestart + " needs to restart";
     }
 
     @JavaScriptMethod

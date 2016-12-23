@@ -2,6 +2,7 @@ package slavemonitor;
 
 import hudson.model.Computer;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map.Entry;
@@ -18,8 +19,6 @@ public class SlaveMonitor extends Thread {
         if (instance == null) {
             instance = new SlaveMonitor();
             instance.start();
-            //instance.reBuildSlaveList();
-            //instance.checkNow();
         }
         return instance;
     }
@@ -42,15 +41,21 @@ public class SlaveMonitor extends Thread {
         LinkedList<String> computers = new LinkedList<String>();
 
         for (Computer computer : Jenkins.getInstance().getComputers()) {
+            if (!computer.isOnline()) {
+                continue;
+            }
             SlaveWatcher slave = null;
             computers.add(computer.getDisplayName());
-
             if (!getSlaves().containsKey(computer.getDisplayName()) && !computer.isUnix()
                     && !computer.getDisplayName().equalsIgnoreCase("master")) {
-                slave = new SlaveWatcher(computer, computer.getNode());
-                if (!computer.isUnix()) {
-                    slave.start();
-                    getSlaves().put(computer.getDisplayName(), slave);
+                try {
+                    slave = new SlaveWatcher(computer, computer.getNode());
+                    if (!computer.isUnix()) {
+                        slave.start();
+                        getSlaves().put(computer.getDisplayName(), slave);
+                    }
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
         }
@@ -79,18 +84,6 @@ public class SlaveMonitor extends Thread {
             slaveEntry.getValue().kill();
         }
         slaves.clear();
-    }
-
-    public synchronized void putOnHold() {
-        for (Entry<String, SlaveWatcher> slaveEntry : slaves.entrySet()) {
-            slaveEntry.getValue().setOnHold(true);
-        }
-    }
-
-    public synchronized void resumeWatchers() {
-        for (Entry<String, SlaveWatcher> slaveEntry : slaves.entrySet()) {
-            slaveEntry.getValue().setOnHold(false);
-        }
     }
 
     public synchronized void checkNow() {
