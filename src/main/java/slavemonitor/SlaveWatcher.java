@@ -21,7 +21,6 @@ public class SlaveWatcher extends Thread {
     public static int NO_RESTART_REQUIRED = 0;
     public static int CHECKING_RESTART_STATUS = 1;
     public static int RESTART_NEEDED_PENDING = 2;
-    public static int RESTART_NEEDED_IGNORED = 3;
     public static int RESTART_INITIATED = 5;
     public static int CHECK_FAILED = 6;
     public static int FAILED_TO_CREATE_LAUNCHER = 7;
@@ -81,8 +80,6 @@ public class SlaveWatcher extends Thread {
             return "<span style='color:orange'>Restarting</span>";
         } else if (status == SlaveWatcher.CHECK_FAILED) {
             return "<span style='color:red'>Failed to check restart status</span>";
-        } else if (status == SlaveWatcher.RESTART_NEEDED_IGNORED) {
-            return "<span style='color:purple'>Restart needed, but ignored</span>";
         }
         return "<span style='color:firebrick'>Unknown status</span>";
     }
@@ -134,12 +131,8 @@ public class SlaveWatcher extends Thread {
         int code = CommandRunner.runCommandWithCode(SlaveWatcher.REBOOT_KEY, launcher);
         code += CommandRunner.runCommandWithCode(SlaveWatcher.SESSION_KEY, launcher);
         if (code != 2) {
-            if (!computer.getDisplayName().equalsIgnoreCase("master")) {
-                status = SlaveWatcher.RESTART_NEEDED_PENDING;
-                setRestartSlave(true);
-            } else {
-                status = SlaveWatcher.RESTART_NEEDED_IGNORED;
-            }
+            status = SlaveWatcher.RESTART_NEEDED_PENDING;
+            setRestartSlave(true);
         } else {
             status = SlaveWatcher.NO_RESTART_REQUIRED;
         }
