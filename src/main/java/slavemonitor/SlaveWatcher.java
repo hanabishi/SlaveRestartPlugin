@@ -150,7 +150,7 @@ public class SlaveWatcher extends Thread {
         if (reservationWorkers.isEmpty()) {
             for (@SuppressWarnings("unused")
             Executor exec : computer.getExecutors()) {
-                SlaveReservationTask task = new SlaveReservationTask(node, "Slave needs to restart");
+                SlaveReservationTask task = new SlaveReservationTask(node, "Slave needs to restart", this);
                 reservationWorkers.add(task);
                 Jenkins.getInstance().getQueue().schedule(task, 0);
             }
@@ -178,6 +178,10 @@ public class SlaveWatcher extends Thread {
 
     public synchronized void checkNow() {
         forceCheck = true;
+        this.notifyAll();
+    }
+
+    public synchronized void slaveStartedRunning() {
         this.notifyAll();
     }
 

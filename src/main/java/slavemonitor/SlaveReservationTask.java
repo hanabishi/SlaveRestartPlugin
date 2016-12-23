@@ -14,10 +14,12 @@ public class SlaveReservationTask extends AbstractQueueTask implements Transient
     private final Node node;
     private final String projectName;
     private SlaveReservationExecutable exec = null;
+    private SlaveWatcher watcher;
 
-    public SlaveReservationTask(Node node, String projectName) {
+    public SlaveReservationTask(Node node, String projectName, SlaveWatcher watcher) {
         this.node = node;
         this.projectName = projectName;
+        this.watcher = watcher;
     }
 
     @Override
@@ -93,6 +95,7 @@ public class SlaveReservationTask extends AbstractQueueTask implements Transient
     @Override
     public Executable createExecutable() throws IOException {
         setExec(new SlaveReservationExecutable(this));
+        watcher.slaveStartedRunning();
         return getExec();
     }
 
