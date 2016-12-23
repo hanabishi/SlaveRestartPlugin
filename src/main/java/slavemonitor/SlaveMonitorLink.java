@@ -77,7 +77,7 @@ public class SlaveMonitorLink extends ManagementLink {
     @JavaScriptMethod
     public String resume() {
         if (slaveMonitor != null) {
-            slaveMonitor.resume();
+            slaveMonitor.resumeWatchers();
         }
         return getStatus();
     }

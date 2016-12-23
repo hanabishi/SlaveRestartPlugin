@@ -8,28 +8,45 @@ import java.util.Map.Entry;
 
 import jenkins.model.Jenkins;
 
-public class SlaveMonitor {
+public class SlaveMonitor extends Thread {
 
+    private boolean isAlive = true;
     private static SlaveMonitor instance = null;
     private HashMap<String, SlaveWatcher> slaves = new HashMap<String, SlaveWatcher>();
 
     public synchronized static SlaveMonitor getInstance() {
         if (instance == null) {
             instance = new SlaveMonitor();
+            instance.start();
             instance.reBuildSlaveList();
             instance.checkNow();
+
         }
         return instance;
     }
 
-    public void reBuildSlaveList() {
+    @Override
+    public void run() {
+        while (isAlive) {
+            try {
+                wait(60000 * 5);
+            } catch (Throwable t) {
+            }
+            if (isAlive) {
+                reBuildSlaveList();
+            }
+        }
+    }
+
+    public synchronized void reBuildSlaveList() {
         LinkedList<String> computers = new LinkedList<String>();
 
         for (Computer computer : Jenkins.getInstance().getComputers()) {
             SlaveWatcher slave = null;
             computers.add(computer.getDisplayName());
 
-            if (!getSlaves().containsKey(computer.getDisplayName())) {
+            if (!getSlaves().containsKey(computer.getDisplayName()) && !computer.isUnix()
+                    && !computer.getDisplayName().equalsIgnoreCase("master")) {
                 slave = new SlaveWatcher(computer, computer.getNode());
                 if (!slave.isUnix()) {
                     slave.start();
@@ -45,7 +62,7 @@ public class SlaveMonitor {
         }
     }
 
-    public void restartSlave(String id) {
+    public synchronized void restartSlave(String id) {
         for (Entry<String, SlaveWatcher> slaveEntry : slaves.entrySet()) {
             if (slaveEntry.getValue().getID() == Integer.parseInt(id)) {
                 slaveEntry.getValue().setRestartSlave(true);
@@ -54,26 +71,29 @@ public class SlaveMonitor {
         }
     }
 
-    public void kill() {
+    public synchronized void kill() {
+        isAlive = false;
+        this.notifyAll();
+
         for (Entry<String, SlaveWatcher> slaveEntry : slaves.entrySet()) {
             slaveEntry.getValue().kill();
         }
         slaves.clear();
     }
 
-    public void putOnHold() {
+    public synchronized void putOnHold() {
         for (Entry<String, SlaveWatcher> slaveEntry : slaves.entrySet()) {
             slaveEntry.getValue().setOnHold(true);
         }
     }
 
-    public void resume() {
+    public synchronized void resumeWatchers() {
         for (Entry<String, SlaveWatcher> slaveEntry : slaves.entrySet()) {
             slaveEntry.getValue().setOnHold(false);
         }
     }
 
-    public void checkNow() {
+    public synchronized void checkNow() {
         for (Entry<String, SlaveWatcher> slaveEntry : slaves.entrySet()) {
             slaveEntry.getValue().checkNow();
         }

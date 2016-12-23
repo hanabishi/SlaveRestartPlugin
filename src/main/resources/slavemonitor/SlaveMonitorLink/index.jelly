@@ -58,6 +58,7 @@
                 });
             }
             function restartSlave(id){
+            	document.getElementById("btn" +id).disabled=true;
                 monitorLink.restartSlave(id, function(t) {
                     document.getElementById("monitorStatus").innerHTML = t.responseObject();
                 });

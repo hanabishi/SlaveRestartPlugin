@@ -19,8 +19,6 @@ public class SlaveWatcher extends Thread {
     public static String SESSION_KEY = "reg query \"hklm\\System\\CurrentControlSet\\Control\\Session Manager\" /v PendingFileRenameOperations";
     public static String REBOOT_KEY = "reg query \"hklm\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\WindowsUpdate\\Auto Update\\RebootRequired\"";
 
-    private LinkedList<String> ignoreList = new LinkedList<String>(Arrays.asList("wsab101156", "master"));
-
     public static int NO_RESTART_REQUIRED = 0;
     public static int CHECKING_RESTART_STATUS = 1;
     public static int RESTART_NEEDED_PENDING = 2;
@@ -139,7 +137,7 @@ public class SlaveWatcher extends Thread {
         int code = CommandRunner.runCommandWithCode(SlaveWatcher.REBOOT_KEY, launcher);
         code += CommandRunner.runCommandWithCode(SlaveWatcher.SESSION_KEY, launcher);
         if (code != 2) {
-            if (!ignoreList.contains(computer.getDisplayName().toLowerCase())) {
+            if (!computer.getDisplayName().equalsIgnoreCase("master")) {
                 status = SlaveWatcher.RESTART_NEEDED_PENDING;
                 setRestartSlave(true);
             } else {
