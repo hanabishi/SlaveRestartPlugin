@@ -1,17 +1,19 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>org.jenkins-ci.plugins</groupId>
-		<artifactId>plugin</artifactId>
-		<version>1.509.1</version>
-	</parent>
+    <parent>
+        <groupId>org.jenkins-ci.plugins</groupId>
+        <artifactId>plugin</artifactId>
+        <version>2.19</version>
+    </parent>
 
 	<groupId>org.jenkins-ci.plugins</groupId>
 	<artifactId>SlaveRestartPlugin</artifactId>
 	<version>1.7</version>
 	<packaging>hpi</packaging>
-
+	<properties>
+		<mailer.version>1.16</mailer.version>
+	</properties>
 	<!-- Jenkins plugin config -->
 	<name>Slave Restart Plugin</name>
 	<url></url>
@@ -40,14 +42,32 @@
 		</pluginRepository>
 	</pluginRepositories>
 
-	
-	  <build> 
-     <plugins> 
-       <plugin> 
-         <groupId>org.jenkins-ci.tools</groupId> 
-         <artifactId>maven-hpi-plugin</artifactId> 
-         <version>1.95</version> 
-       </plugin> 
-     </plugins> 
-   </build> 
+
+	<build>
+		<pluginManagement>
+			<plugins>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<configuration>
+						<source>${maven.compiler.target}</source>
+						<target>${maven.compiler.target}</target>
+						<showDeprecation>true</showDeprecation>
+						<showWarnings>true</showWarnings>
+						<fork>true</fork>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>${maven.compiler.target}</source>
+					<target>${maven.compiler.target}</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 </project>

@@ -3,6 +3,7 @@ package slavemonitor;
 import hudson.model.ResourceList;
 import hudson.model.Label;
 import hudson.model.Node;
+import hudson.model.Queue.Executable;
 import hudson.model.Queue.TransientTask;
 import hudson.model.queue.AbstractQueueTask;
 import hudson.model.queue.CauseOfBlockage;
