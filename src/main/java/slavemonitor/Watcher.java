@@ -145,7 +145,6 @@ public class Watcher {
 
     @SuppressWarnings("unused")
     private synchronized void doRestartIfPossible() throws IllegalThreadStateException, IOException, Exception {
-        boolean noRunningServices = true;
         if (reservationWorkers.isEmpty()) {
             for (Executor exec : computer.getExecutors()) {
                 SlaveReservationTask task = new SlaveReservationTask(node, "Slave needs to restart", this);
@@ -159,12 +158,14 @@ public class Watcher {
                 reserveTask(task);
             }
         }
-
+        int loadedExecutors = 0;
         for (Executor exec : computer.getExecutors()) {
-            noRunningServices &= exec == null || (exec.getCurrentExecutable() instanceof SlaveReservationExecutable);
+            if (exec.getCurrentExecutable() instanceof SlaveReservationExecutable) {
+                loadedExecutors++;
+            }
         }
 
-        if (noRunningServices) {
+        if (loadedExecutors == reservationWorkers.size()) {
             status = Watcher.RESTART_INITIATED;
             Launcher launcher = getLauncher();
             CommandRunner.runCommandException("shutdown /r /f /t 5", launcher);
