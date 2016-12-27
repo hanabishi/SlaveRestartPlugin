@@ -1,9 +1,9 @@
 package slavemonitor;
 
 import hudson.Launcher;
+import hudson.model.Executor;
 import hudson.model.TaskListener;
 import hudson.model.Computer;
-import hudson.model.Executor;
 import hudson.model.Node;
 
 import java.io.IOException;
@@ -12,7 +12,6 @@ import java.util.LinkedList;
 
 import jenkins.model.Jenkins;
 import support.CommandRunner;
-import support.LogHandler;
 
 public class SlaveWatcher extends Thread {
     public static String SESSION_KEY = "reg query \"hklm\\System\\CurrentControlSet\\Control\\Session Manager\" /v PendingFileRenameOperations";
@@ -194,14 +193,8 @@ public class SlaveWatcher extends Thread {
                     if (isRestartSlave()) {
                         doRestartIfPossible();
                     }
-                } catch (IOException e) {
-                    LogHandler.printStackTrace(this, e);
-                } catch (InterruptedException e) {
-                    LogHandler.printStackTrace(this, e);
-                } catch (IllegalThreadStateException e) {
-                    LogHandler.printStackTrace(this, e);
                 } catch (Exception e) {
-                    LogHandler.printStackTrace(this, e);
+                    e.printStackTrace();
                 }
             }
             synchronized (this) {
@@ -210,7 +203,7 @@ public class SlaveWatcher extends Thread {
                         this.wait(60000);
                     } while (!isOnline() && keepRunning);
                 } catch (InterruptedException e) {
-                    LogHandler.printStackTrace(e);
+                    e.printStackTrace();
                 }
             }
         }
