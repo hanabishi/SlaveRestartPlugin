@@ -127,8 +127,8 @@ public class SlaveWatcher extends Thread {
             return;
         }
         status = SlaveWatcher.CHECKING_RESTART_STATUS;
-        int code = CommandRunner.runCommandWithCode(SlaveWatcher.REBOOT_KEY, launcher);
-        code += CommandRunner.runCommandWithCode(SlaveWatcher.SESSION_KEY, launcher);
+        int code = CommandRunner.runCommandCode(SlaveWatcher.REBOOT_KEY, launcher)
+                + CommandRunner.runCommandCode(SlaveWatcher.SESSION_KEY, launcher);
         if (code != 2) {
             status = SlaveWatcher.RESTART_NEEDED_PENDING;
             setRestartSlave(true);
@@ -137,16 +137,23 @@ public class SlaveWatcher extends Thread {
         }
     }
 
+    @SuppressWarnings("unused")
     private synchronized void doRestartIfPossible() throws IllegalThreadStateException, IOException, Exception {
         boolean noRunningServices = true;
         if (reservationWorkers.isEmpty()) {
-            for (@SuppressWarnings("unused")
-            Executor exec : computer.getExecutors()) {
+            for (Executor exec : computer.getExecutors()) {
+                SlaveReservationTask task = new SlaveReservationTask(node, "Slave needs to restart", this);
+                reservationWorkers.add(task);
+                Jenkins.getInstance().getQueue().schedule(task, 0);
+            }
+        } else if (reservationWorkers.size() < computer.getExecutors().size()) {
+            for (int i = 0; i < (computer.getExecutors().size() - reservationWorkers.size()); i++) {
                 SlaveReservationTask task = new SlaveReservationTask(node, "Slave needs to restart", this);
                 reservationWorkers.add(task);
                 Jenkins.getInstance().getQueue().schedule(task, 0);
             }
         }
+
         for (Executor exec : computer.getExecutors()) {
             noRunningServices &= exec == null || (exec.getCurrentExecutable() instanceof SlaveReservationExecutable);
         }
@@ -154,7 +161,7 @@ public class SlaveWatcher extends Thread {
         if (noRunningServices) {
             status = SlaveWatcher.RESTART_INITIATED;
             Launcher launcher = getLauncher();
-            CommandRunner.runCommand("shutdown /r /f /t 5", launcher);
+            CommandRunner.runCommandException("shutdown /r /f /t 5", launcher);
             int timeout = 0;
             while (computer.isOnline()) {
                 timeout++;
@@ -199,11 +206,8 @@ public class SlaveWatcher extends Thread {
             }
             synchronized (this) {
                 try {
-                    do {
-                        this.wait(60000);
-                    } while (!isOnline() && keepRunning);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    this.wait(60000);
+                } catch (Throwable e) {
                 }
             }
         }

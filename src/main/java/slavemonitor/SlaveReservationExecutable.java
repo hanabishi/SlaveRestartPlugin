@@ -22,19 +22,17 @@ public class SlaveReservationExecutable implements Executable {
 
     @Override
     public synchronized void run() {
-        while (isAlive) {
-            try {
+        try {
+            while (isAlive) {
                 this.wait(60000);
-            } catch (InterruptedException e) {
-                isAlive = false;
-            } catch (Exception e) {
-                isAlive = false;
             }
+        } catch (Throwable e) {
         }
+        isAlive = false;
     }
 
     @Override
     public long getEstimatedDuration() {
-        return -1;
+        return 60;
     }
 }

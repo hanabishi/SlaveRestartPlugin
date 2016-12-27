@@ -7,7 +7,7 @@ import java.io.IOException;
 
 public class CommandRunner {
 
-    public static int runCommandWithCode(String commandLine, Launcher launcher) throws IOException,
+    public static int runCommandCode(String commandLine, Launcher launcher) throws IOException,
             InterruptedException {
         ProcStarter proc = launcher.launch();
         String command = "cmd /c " + commandLine;
@@ -16,7 +16,7 @@ public class CommandRunner {
         return proc.join();
     }
 
-    public static void runCommand(String commandLine, Launcher launcher) throws Exception, IOException,
+    public static void runCommandException(String commandLine, Launcher launcher) throws Exception, IOException,
             InterruptedException, IllegalThreadStateException {
         ProcStarter proc = null;
 
