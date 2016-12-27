@@ -29,7 +29,7 @@ public class SlaveMonitorLink extends ManagementLink {
 
     @Override
     public String getIconFileName() {
-        return "/plugin/SlaveRestartMonitor/slaverestartmonitor.jpg";
+        return "/plugin/SlaveRestartPlugin/slaverestartmonitor.jpg";
     }
 
     @Override

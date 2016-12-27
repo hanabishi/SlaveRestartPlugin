@@ -23,10 +23,10 @@
          		
          		if(section.style.display == ""){
          			section.style.display = "none";
-         			document.getElementById("ICON"+listId).src="${rootURL}/plugin/SlaveRestartMonitor/expand.png";
+         			document.getElementById("ICON"+listId).src="${rootURL}/plugin/SlaveRestartPlugin/expand.png";
          		}else{
     	     		section.style.display = "";
-    	     		document.getElementById("ICON"+listId).src="${rootURL}/plugin/SlaveRestartMonitor/collapse.png";
+    	     		document.getElementById("ICON"+listId).src="${rootURL}/plugin/SlaveRestartPlugin/collapse.png";
          		}
          	}
          	
