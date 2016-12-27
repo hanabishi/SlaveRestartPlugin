@@ -1,4 +1,4 @@
-package slavemonitor;
+package support;
 
 import hudson.model.ResourceList;
 import hudson.model.Label;
@@ -10,13 +10,15 @@ import hudson.model.queue.CauseOfBlockage;
 
 import java.io.IOException;
 
+import slavemonitor.Watcher;
+
 public class SlaveReservationTask extends AbstractQueueTask implements TransientTask {
     private final Node node;
     private final String projectName;
     private SlaveReservationExecutable exec = null;
-    private SlaveWatcher watcher;
+    private Watcher watcher;
 
-    public SlaveReservationTask(Node node, String projectName, SlaveWatcher watcher) {
+    public SlaveReservationTask(Node node, String projectName, Watcher watcher) {
         this.node = node;
         this.projectName = projectName;
         this.watcher = watcher;

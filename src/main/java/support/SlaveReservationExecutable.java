@@ -1,4 +1,4 @@
-package slavemonitor;
+package support;
 
 import hudson.model.Queue.Executable;
 

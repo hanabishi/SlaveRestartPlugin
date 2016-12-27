@@ -12,8 +12,10 @@ import java.util.LinkedList;
 
 import jenkins.model.Jenkins;
 import support.CommandRunner;
+import support.SlaveReservationExecutable;
+import support.SlaveReservationTask;
 
-public class SlaveWatcher extends Thread {
+public class Watcher {
     public static String SESSION_KEY = "reg query \"hklm\\System\\CurrentControlSet\\Control\\Session Manager\" /v PendingFileRenameOperations";
     public static String REBOOT_KEY = "reg query \"hklm\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\WindowsUpdate\\Auto Update\\RebootRequired\"";
 
@@ -44,7 +46,7 @@ public class SlaveWatcher extends Thread {
     private boolean restartSlave = false;
     private boolean forceCheck = false;
 
-    public SlaveWatcher(Computer computer, Node node) throws IOException, InterruptedException {
+    public Watcher(Computer computer, Node node) throws IOException, InterruptedException {
         this.computer = computer;
         this.node = node;
         doCheckForRestart();
@@ -56,7 +58,7 @@ public class SlaveWatcher extends Thread {
 
     public void setError(String message) {
         this.lastChecked = new Date();
-        this.status = SlaveWatcher.CHECK_FAILED;
+        this.status = Watcher.CHECK_FAILED;
         this.errorMessage = message;
     }
 
@@ -69,15 +71,15 @@ public class SlaveWatcher extends Thread {
     }
 
     private String getStatusText() {
-        if (status == SlaveWatcher.NO_RESTART_REQUIRED) {
+        if (status == Watcher.NO_RESTART_REQUIRED) {
             return "<span style='color:greenk'>No restart required</span>";
-        } else if (status == SlaveWatcher.CHECKING_RESTART_STATUS) {
+        } else if (status == Watcher.CHECKING_RESTART_STATUS) {
             return "<span style='color:blue'>Checking if restart is needed</span>";
-        } else if (status == SlaveWatcher.RESTART_NEEDED_PENDING) {
+        } else if (status == Watcher.RESTART_NEEDED_PENDING) {
             return "<span style='color:orange'>Restart needed, waiting for all executors to be free</span>";
-        } else if (status == SlaveWatcher.RESTART_INITIATED) {
+        } else if (status == Watcher.RESTART_INITIATED) {
             return "<span style='color:orange'>Restarting</span>";
-        } else if (status == SlaveWatcher.CHECK_FAILED) {
+        } else if (status == Watcher.CHECK_FAILED) {
             return "<span style='color:red'>Failed to check restart status</span>";
         }
         return "<span style='color:firebrick'>Unknown status</span>";
@@ -95,7 +97,7 @@ public class SlaveWatcher extends Thread {
         reservationWorkers.clear();
         setRestartSlave(false);
         getRestarts().add(SlaveMonitorLink.dateFormat.format(new Date()));
-        status = SlaveWatcher.NO_RESTART_REQUIRED;
+        status = Watcher.NO_RESTART_REQUIRED;
     }
 
     public boolean isOnline() {
@@ -116,7 +118,7 @@ public class SlaveWatcher extends Thread {
         try {
             return node.createLauncher(TaskListener.NULL);
         } catch (NullPointerException e) {
-            status = SlaveWatcher.FAILED_TO_CREATE_LAUNCHER;
+            status = Watcher.FAILED_TO_CREATE_LAUNCHER;
             return null;
         }
     }
@@ -126,15 +128,19 @@ public class SlaveWatcher extends Thread {
         if (launcher == null) {
             return;
         }
-        status = SlaveWatcher.CHECKING_RESTART_STATUS;
-        int code = CommandRunner.runCommandCode(SlaveWatcher.REBOOT_KEY, launcher)
-                + CommandRunner.runCommandCode(SlaveWatcher.SESSION_KEY, launcher);
+        status = Watcher.CHECKING_RESTART_STATUS;
+        int code = CommandRunner.runCommandCode(Watcher.REBOOT_KEY, launcher)
+                + CommandRunner.runCommandCode(Watcher.SESSION_KEY, launcher);
         if (code != 2) {
-            status = SlaveWatcher.RESTART_NEEDED_PENDING;
+            status = Watcher.RESTART_NEEDED_PENDING;
             setRestartSlave(true);
         } else {
-            status = SlaveWatcher.NO_RESTART_REQUIRED;
+            status = Watcher.NO_RESTART_REQUIRED;
         }
+    }
+
+    public static synchronized void reserveTask(SlaveReservationTask task) {
+        Jenkins.getInstance().getQueue().schedule(task, 0);
     }
 
     @SuppressWarnings("unused")
@@ -144,13 +150,13 @@ public class SlaveWatcher extends Thread {
             for (Executor exec : computer.getExecutors()) {
                 SlaveReservationTask task = new SlaveReservationTask(node, "Slave needs to restart", this);
                 reservationWorkers.add(task);
-                Jenkins.getInstance().getQueue().schedule(task, 0);
+                reserveTask(task);
             }
         } else if (reservationWorkers.size() < computer.getExecutors().size()) {
             for (int i = 0; i < (computer.getExecutors().size() - reservationWorkers.size()); i++) {
                 SlaveReservationTask task = new SlaveReservationTask(node, "Slave needs to restart", this);
                 reservationWorkers.add(task);
-                Jenkins.getInstance().getQueue().schedule(task, 0);
+                reserveTask(task);
             }
         }
 
@@ -159,7 +165,7 @@ public class SlaveWatcher extends Thread {
         }
 
         if (noRunningServices) {
-            status = SlaveWatcher.RESTART_INITIATED;
+            status = Watcher.RESTART_INITIATED;
             Launcher launcher = getLauncher();
             CommandRunner.runCommandException("shutdown /r /f /t 5", launcher);
             int timeout = 0;
@@ -184,31 +190,18 @@ public class SlaveWatcher extends Thread {
         this.notifyAll();
     }
 
-    @Override
-    public void run() {
-        int counter = 0;
-        while (isKeepRunning()) {
-            counter++;
-            if (isOnline()) {
-                try {
-                    // check for updates every hour
-                    if (!isRestartSlave() && counter > 60 || forceCheck) {
-                        forceCheck = false;
-                        doCheckForRestart();
-                        counter = 0;
-                    }
-                    if (isRestartSlave()) {
-                        doRestartIfPossible();
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
+    public void check() {
+        if (isOnline()) {
+            try {
+                if (!isRestartSlave() || forceCheck) {
+                    forceCheck = false;
+                    doCheckForRestart();
                 }
-            }
-            synchronized (this) {
-                try {
-                    this.wait(60000);
-                } catch (Throwable e) {
+                if (isRestartSlave()) {
+                    doRestartIfPossible();
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }

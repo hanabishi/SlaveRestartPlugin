@@ -68,7 +68,7 @@ public class SlaveMonitorLink extends ManagementLink {
 
     public String getStatus() {
         int needsRestart = 0;
-        for (Entry<String, SlaveWatcher> config : slaveMonitor.getSlaves().entrySet()) {
+        for (Entry<String, Watcher> config : slaveMonitor.getSlaves().entrySet()) {
             needsRestart += (config.getValue().isRestartSlave() ? 1 : 0);
         }
 
@@ -83,18 +83,18 @@ public class SlaveMonitorLink extends ManagementLink {
         return getStatus();
     }
 
-    public LinkedList<SlaveWatcher> getSlaves() {
-        LinkedList<SlaveWatcher> slaveList = new LinkedList<SlaveWatcher>();
+    public LinkedList<Watcher> getSlaves() {
+        LinkedList<Watcher> slaveList = new LinkedList<Watcher>();
         if (slaveMonitor == null) {
             return slaveList;
         }
 
-        for (Entry<String, SlaveWatcher> config : slaveMonitor.getSlaves().entrySet()) {
+        for (Entry<String, Watcher> config : slaveMonitor.getSlaves().entrySet()) {
             slaveList.add(config.getValue());
         }
-        Collections.sort(slaveList, new Comparator<SlaveWatcher>() {
+        Collections.sort(slaveList, new Comparator<Watcher>() {
             @Override
-            public int compare(SlaveWatcher o1, SlaveWatcher o2) {
+            public int compare(Watcher o1, Watcher o2) {
                 String path1 = Util.fixNull(o1.getComputer().getDisplayName());
                 String path2 = Util.fixNull(o2.getComputer().getDisplayName());
                 return path1.compareTo(path2);

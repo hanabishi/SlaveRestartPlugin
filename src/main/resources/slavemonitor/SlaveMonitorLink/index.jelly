@@ -1,5 +1,5 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-  <l:layout title="Slave Monitor" permission="${app.ADMINISTER}" norefresh="true">
+  <l:layout title="Slave Restart Plugin" permission="${app.ADMINISTER}" norefresh="true">
   <style>
 	  .clickable {
 			cursor: pointer;
@@ -72,7 +72,7 @@
      	<j:forEach var="slave" items="${it.getSlaves()}">
      		<p>
      			<h3 class="clickable">
-     			<button id="btn${slave.getID()}" onclick="restartSlave(${slave.getID()})">RESTART</button> <j:if test="${!slave.getRestarts().isEmpty()}"><img id="ICON${slave.getID()}" src="${rootURL}/plugin/SlaveRestartMonitor/expand.png" onclick="toggleList(${slave.getID()})"/></j:if> 
+     			<button id="btn${slave.getID()}" onclick="restartSlave(${slave.getID()})">RESTART</button> <j:if test="${!slave.getRestarts().isEmpty()}"><img id="ICON${slave.getID()}" src="${rootURL}/plugin/SlaveRestartPlugin/expand.png" onclick="toggleList(${slave.getID()})"/></j:if> 
      			${slave.formatedHeader()}</h3>
      			<ul id="LIST${slave.getID()}" style="display:none">
 	     			<j:forEach var="restart" items="${slave.getRestarts()}">

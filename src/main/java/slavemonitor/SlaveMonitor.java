@@ -13,7 +13,7 @@ public class SlaveMonitor extends Thread {
 
     private boolean isAlive = true;
     private static SlaveMonitor instance = null;
-    private HashMap<String, SlaveWatcher> slaves = new HashMap<String, SlaveWatcher>();
+    private HashMap<String, Watcher> slaves = new HashMap<String, Watcher>();
 
     public synchronized static SlaveMonitor getInstance() {
         if (instance == null) {
@@ -28,10 +28,13 @@ public class SlaveMonitor extends Thread {
         while (isAlive) {
             if (isAlive) {
                 reBuildSlaveList();
+                for (Watcher watcher : getSlaves().values()) {
+                    watcher.check();
+                }
             }
 
             try {
-                wait(60000 * 5);
+                this.wait(60000);
             } catch (Throwable t) {
             }
         }
@@ -44,22 +47,19 @@ public class SlaveMonitor extends Thread {
             if (!computer.isOnline()) {
                 continue;
             }
-            SlaveWatcher slave = null;
             computers.add(computer.getDisplayName());
             if (!getSlaves().containsKey(computer.getDisplayName()) && !computer.isUnix()
                     && !computer.getDisplayName().equalsIgnoreCase("master")) {
                 try {
-                    slave = new SlaveWatcher(computer, computer.getNode());
                     if (!computer.isUnix()) {
-                        slave.start();
-                        getSlaves().put(computer.getDisplayName(), slave);
+                        getSlaves().put(computer.getDisplayName(), new Watcher(computer, computer.getNode()));
                     }
                 } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
                 }
             }
         }
-        for (Entry<String, SlaveWatcher> slaveEntry : slaves.entrySet()) {
+        for (Entry<String, Watcher> slaveEntry : slaves.entrySet()) {
             if (!computers.contains(slaveEntry.getKey())) {
                 slaveEntry.getValue().kill();
                 slaves.remove(slaveEntry.getKey());
@@ -68,7 +68,7 @@ public class SlaveMonitor extends Thread {
     }
 
     public synchronized void restartSlave(String id) {
-        for (Entry<String, SlaveWatcher> slaveEntry : slaves.entrySet()) {
+        for (Entry<String, Watcher> slaveEntry : slaves.entrySet()) {
             if (slaveEntry.getValue().getID() == Integer.parseInt(id)) {
                 slaveEntry.getValue().setRestartSlave(true);
                 return;
@@ -80,23 +80,23 @@ public class SlaveMonitor extends Thread {
         isAlive = false;
         this.notifyAll();
 
-        for (Entry<String, SlaveWatcher> slaveEntry : slaves.entrySet()) {
+        for (Entry<String, Watcher> slaveEntry : slaves.entrySet()) {
             slaveEntry.getValue().kill();
         }
         slaves.clear();
     }
 
     public synchronized void checkNow() {
-        for (Entry<String, SlaveWatcher> slaveEntry : slaves.entrySet()) {
+        for (Entry<String, Watcher> slaveEntry : slaves.entrySet()) {
             slaveEntry.getValue().checkNow();
         }
     }
 
-    public HashMap<String, SlaveWatcher> getSlaves() {
+    public HashMap<String, Watcher> getSlaves() {
         return slaves;
     }
 
-    public void setSlaves(HashMap<String, SlaveWatcher> slaves) {
+    public void setSlaves(HashMap<String, Watcher> slaves) {
         this.slaves = slaves;
     }
 
